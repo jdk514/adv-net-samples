@@ -26,7 +26,7 @@ output,error = process.communicate()
 
 if not error:
 	for mac in output:
-	print mac	
+		print mac	
 else:
 	print "Failed getting macs"
 	print error
