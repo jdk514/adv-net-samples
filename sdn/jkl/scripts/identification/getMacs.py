@@ -12,6 +12,7 @@ process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
 output,error = process.communicate()
 
 if not error:
+	output = output.rstrip()
 	print "["+output+"]"
 else:
 	print "Failed getting hostname"
@@ -25,8 +26,9 @@ process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
 output,error = process.communicate()
 
 if not error:
-	for mac in output:
-		print mac	
+	output = output.rstrip()
+	#for mac in output:
+	print mac	
 else:
 	print "Failed getting macs"
 	print error
