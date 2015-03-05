@@ -27,8 +27,7 @@ output,error = process.communicate()
 
 if not error:
 	output = output.rstrip()
-	#for mac in output:
-	print mac	
+	print output	
 else:
 	print "Failed getting macs"
 	print error
