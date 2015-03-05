@@ -53,11 +53,11 @@ class SuperSimple (object):
     log.debug("Parsed packet: %s", packet)
 
     ### Ask the switch to flood the packet out. Do not setup a rule
-    # msg = of.ofp_packet_out()
-    # msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
-    # msg.data = event.ofp
-    # msg.in_port = event.port
-    # self.connection.send(msg)
+    msg = of.ofp_packet_out()
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    msg.data = event.ofp
+    msg.in_port = event.port
+    self.connection.send(msg)
 
     ### Ask the switch to setup a rule so all packets in the flow will be
     ### flooded out

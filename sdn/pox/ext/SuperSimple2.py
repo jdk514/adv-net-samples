@@ -16,7 +16,7 @@
 This is a really simple POX program that just prints info about
 any packets it receives.
 """
-
+import pox
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
 from datetime import datetime
@@ -81,7 +81,7 @@ class SuperSimple (object):
     print "path table"
     printPacket()
     #pdb.set_trace()
-    print "Packet type is %d",packet.type
+    print "Packet type is ",packet.type
     if packet.type == packet.IP_TYPE:
         ipv4_packet = event.parsed.find("ipv4")
         tcp_packet = event.parsed.find("tcp")
@@ -92,7 +92,7 @@ class SuperSimple (object):
             msg.in_port = event.port
             self.connection.send(msg)
             return
-        if (tcp_packet.SYN != True or tcp_packet.ACK != True):
+        if (tcp_packet.SYN != True or tcp_packet.ACK != True or tcp_packet.URG !=True or tcp_packet.PSH != True or tcp_packet.RST != True):
             msg = of.ofp_packet_out()
             msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
             msg.data = event.ofp
@@ -121,7 +121,7 @@ class SuperSimple (object):
                 else:
                     checker = False
         if checker is False:
-            pathTable.append(PathTableRow(packet_in.in_port,"",time,dpid,tcp_packet.payload,1))
+            pathTable.append(PathTableRow(packet_in.in_port,packet.dst,time,pox.lib.util.dpid_to_str(dpid),tcp_packet.payload,1))
             #msg = of.ofp_packet_out()
             #msg.buffer_id = event.ofp.buffer_id
             #msg.in_port = event.port
@@ -136,7 +136,7 @@ class SuperSimple (object):
             return
         
         #msg = of.ofp_packet_out()
-        pathTable.append(PathTableRow(packet_in.in_port,"",time,dpid,tcp_packet.payload,0))
+        pathTable.append(PathTableRow(packet_in.in_port,packet.dst,time,pox.lib.util.dpid_to_str(dpid),tcp_packet.payload,0))
 	#pathTable.append(PathTableRow(packet_in.in_port,packet.dst,time,ipv4_packet.srcip))
         tcp_packet.payload = str(self.connection.dpid)
         ### Ask the switch to flood the packet out. Do not setup a rule
