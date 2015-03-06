@@ -47,9 +47,9 @@ class PathTableRow():
     def getRow(self):
         return [self.srcP,self.srcD,self.time,self.currentSwitch,self.prevSwitch,self.endPoint]
     def getCurrentSwitch(self):
-	return self.currentSwitch
+	   return self.currentSwitch
     def getEndPoint(self):
-	return self.endPoint
+	   return self.endPoint
 
 class SuperSimple (object):
   """
@@ -102,6 +102,10 @@ class SuperSimple (object):
                     msg.buffer_id = event.ofp.buffer_id
                     msg.in_port = event.port
                     self.connection.send(msg)
+
+                    if (len(pathTable) >= 8):
+                        printPacket()
+                        sys.exit()
                     return
 
             # Not found in table, append with 0 value            
@@ -111,6 +115,9 @@ class SuperSimple (object):
             msg.data = event.ofp
             msg.in_port = event.port
             self.connection.send(msg)
+            if (len(pathTable) >= 8):
+                printPacket()
+                sys.exit()
             return
 
     ### Ask the switch to setup a rule so all packets in the flow will be
