@@ -47,9 +47,9 @@ class PathTableRow():
     def getRow(self):
         return [self.srcP,self.srcD,self.time,self.currentSwitch,self.prevSwitch,self.endPoint]
     def getCurrentSwitch(self):
-	    return self.currentSwitch
+	return self.currentSwitch
     def getEndPoint(self):
-	   return self.endPoint
+	return self.endPoint
 
 class SuperSimple (object):
   """
@@ -76,16 +76,19 @@ class SuperSimple (object):
       return
 
     packet_in = event.ofp # The actual ofp_packet_in message.
-    print "path table"
-    printPacket()
-    print "Packet type is %d",packet.type
+    #print "path table"
+    #printPacket()
+    #print "Packet type is %d",packet.type
 
     # only care about IP packets
     if packet.type == packet.IP_TYPE:
         ipv4_packet = event.parsed.find("ipv4")
         tcp_packet = event.parsed.find("tcp") #pull out info if tcp packet
 
-        if (tcp_packet is not None and tcp_packet.flags == 255):
+	if (tcp_packet is not None):
+		pdb.set_trace(
+	# tcp_packet.res accesses TCP reserved flags - set to 3 on our packets
+        if (tcp_packet is not None and tcp_packet.res == 3):
             # Set paramaters for the pathTable
             time = datetime.now().strftime('%H:%M:%S:%f')
             dpid = self.connection.dpid
