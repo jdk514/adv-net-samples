@@ -143,9 +143,9 @@ class SuperSimple (object):
 
 
 def launch ():
-  """
-  Starts the component. Run when Pox starts.
-  """
+	"""
+	Starts the component. Run when Pox starts.
+	"""
 	def start_switch (event):
 		log.debug("Controlling %s" % (event.connection,))
 		SuperSimple(event.connection)
