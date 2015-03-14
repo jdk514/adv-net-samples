@@ -27,29 +27,37 @@ log = core.getLogger()
 
 pathTable = []
 
+def mysend(self, msg):
+	totalsent = 0
+	while totalsent < MSGLEN:
+		sent = self.sock.send(msg[totalsent:])
+		if sent == 0:
+			raise RuntimeError("socket connection broken")
+		totalsent = totalsent + sent
+
 def printPacket():
-    global pathTable
-    for i in range(len(pathTable)):
-        print pathTable[i].getRow()
+	global pathTable
+	for i in range(len(pathTable)):
+		print pathTable[i].getRow()
 
 class PathTableRow():
-    """
-    A simple object to store details for packets.
-    """
-    
-    def __init__(self,srcP,srcD,time,switch,prevSwitch,end):
-        self.srcP = srcP
-        self.srcD = srcD
-        self.time = time
-        self.currentSwitch = switch
-        self.prevSwitch = prevSwitch
-        self.endPoint = end
-    def getRow(self):
-        return [self.srcP,self.srcD,self.time,self.currentSwitch,self.prevSwitch,self.endPoint]
-    def getCurrentSwitch(self):
-	return self.currentSwitch
-    def getEndPoint(self):
-	return self.endPoint
+	"""
+	A simple object to store details for packets.
+	"""
+	
+	def __init__(self,srcP,srcD,time,switch,prevSwitch,end):
+		self.srcP = srcP
+		self.srcD = srcD
+		self.time = time
+		self.currentSwitch = switch
+		self.prevSwitch = prevSwitch
+		self.endPoint = end
+	def getRow(self):
+		return [self.srcP,self.srcD,self.time,self.currentSwitch,self.prevSwitch,self.endPoint]
+	def getCurrentSwitch(self):
+		return self.currentSwitch
+	def getEndPoint(self):
+		return self.endPoint
 
 class SuperSimple (object):
   """
@@ -57,70 +65,74 @@ class SuperSimple (object):
   A Connection object for that switch is passed to the __init__ function.
   """
   def __init__ (self, connection):
-    # Keep track of the connection to the switch so that we can
-    # send it messages!
-    self.connection = connection
-    
-    # This binds our PacketIn event listener
-    connection.addListeners(self)
+	# Keep track of the connection to the switch so that we can
+	# send it messages!
+	self.connection = connection
+	
+	# This binds our PacketIn event listener
+	connection.addListeners(self)
 
 
   def _handle_PacketIn (self, event):
-    """
-    Handles packet in messages from the switch.
-    """
+	"""
+	Handles packet in messages from the switch.
+	"""
 
-    packet = event.parsed # This is the parsed packet data.
-    if not packet.parsed:
-      log.warning("Ignoring incomplete packet")
-      return
+	packet = event.parsed # This is the parsed packet data.
+	if not packet.parsed:
+	  log.warning("Ignoring incomplete packet")
+	  return
 
-    packet_in = event.ofp # The actual ofp_packet_in message.
-    #print "path table"
-    #printPacket()
-    #print "Packet type is %d",packet.type
+	packet_in = event.ofp # The actual ofp_packet_in message.
+	#print "path table"
+	#printPacket()
+	#print "Packet type is %d",packet.type
 
-    # only care about IP packets
-    if packet.type == packet.IP_TYPE:
-        ipv4_packet = event.parsed.find("ipv4")
-        tcp_packet = event.parsed.find("tcp") #pull out info if tcp packet
+	# only care about IP packets
+	if packet.type == packet.IP_TYPE:
+		ipv4_packet = event.parsed.find("ipv4")
+		tcp_packet = event.parsed.find("tcp") #pull out info if tcp packet
 
 	if (tcp_packet is not None):
-		pdb.set_trace(
 	# tcp_packet.res accesses TCP reserved flags - set to 3 on our packets
-        if (tcp_packet is not None and tcp_packet.res == 3):
-            # Set paramaters for the pathTable
-            time = datetime.now().strftime('%H:%M:%S:%f')
-            dpid = self.connection.dpid
-            prevSwitch = ""
+		if (tcp_packet is not None and tcp_packet.res == 3):
+			# Set paramaters for the pathTable
+			time = datetime.now().strftime('%H:%M:%S:%f')
+			dpid = self.connection.dpid
+			prevSwitch = ""
 
-            for i in range(len(pathTable)):
-                if self.connection.dpid == pathTable[i].getCurrentSwitch():
-                    # If switch has already seen the packet drop it
-                    pathTable.append(PathTableRow(packet_in.in_port, "", time, dpid, tcp_packet.payload,1))
-                    msg = of.ofp_packet_out()
-                    msg.buffer_id = event.ofp.buffer_id
-                    msg.in_port = event.port
-                    self.connection.send(msg)
-                    return
+			for i in range(len(pathTable)):
+				if self.connection.dpid == pathTable[i].getCurrentSwitch():
+					# If switch has already seen the packet drop it
+					pathTable.append(PathTableRow(packet_in.in_port, "", time, dpid, tcp_packet.payload,1))
+					msg = of.ofp_packet_out()
+					msg.buffer_id = event.ofp.buffer_id
+					msg.in_port = event.port
+					self.connection.send(msg)
+					return
 
-            # Not found in table, append with 0 value            
-            pathTable.append(PathTableRow(packet_in.in_port,"",time,dpid,tcp_packet.payload,0))
-            msg = of.ofp_packet_out()
-            msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
-            msg.data = event.ofp
-            msg.in_port = event.port
-            self.connection.send(msg)
-            return
+			# Not found in table, append with 0 value            
+			pathTable.append(PathTableRow(packet_in.in_port,"",time,dpid,tcp_packet.payload,0))
+			msg = of.ofp_packet_out()
+			msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+			msg.data = event.ofp
+			msg.in_port = event.port
+			self.connection.send(msg)
 
-    ### Ask the switch to setup a rule so all packets in the flow will be
-    ### flooded out
-    msg = of.ofp_flow_mod()
-    msg.match = of.ofp_match.from_packet(packet, event.port)
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
-    msg.idle_timeout = 10
-    msg.hard_timeout = 30
-    self.connection.send(msg)
+			# If this is the last socket we need to send out the information for the last packet
+			# if (last_packet):
+			# 	s_pathTable = pickle.dumps(pathTable)
+			# 	mysend(s_pathTable)
+			return
+
+	### Ask the switch to setup a rule so all packets in the flow will be
+	### flooded out
+	msg = of.ofp_flow_mod()
+	msg.match = of.ofp_match.from_packet(packet, event.port)
+	msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+	msg.idle_timeout = 10
+	msg.hard_timeout = 30
+	self.connection.send(msg)
 
 
 def launch ():
@@ -128,7 +140,7 @@ def launch ():
   Starts the component. Run when Pox starts.
   """
   def start_switch (event):
-    log.debug("Controlling %s" % (event.connection,))
-    SuperSimple(event.connection)
+	log.debug("Controlling %s" % (event.connection,))
+	SuperSimple(event.connection)
 
   core.openflow.addListenerByName("ConnectionUp", start_switch)

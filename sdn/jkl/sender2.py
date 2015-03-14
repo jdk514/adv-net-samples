@@ -119,6 +119,36 @@ def checksum(data):
 	s = ~s & 0xffff
 	return s
 
+class PathTableRow():
+    """
+    A simple object to store details for packets.
+    """
+    
+    def __init__(self,srcP,srcD,time,switch,prevSwitch,end):
+        self.srcP = srcP
+        self.srcD = srcD
+        self.time = time
+        self.currentSwitch = switch
+        self.prevSwitch = prevSwitch
+        self.endPoint = end
+    def getRow(self):
+        return [self.srcP,self.srcD,self.time,self.currentSwitch,self.prevSwitch,self.endPoint]
+    def getCurrentSwitch(self):
+	return self.currentSwitch
+    def getEndPoint(self):
+	return self.endPoint
+
+def myreceive(self):
+        chunks = []
+        bytes_recd = 0
+        while bytes_recd < MSGLEN:
+            chunk = self.sock.recv(min(MSGLEN - bytes_recd, 2048))
+            if chunk == '':
+                raise RuntimeError("socket connection broken")
+            chunks.append(chunk)
+            bytes_recd = bytes_recd + len(chunk)
+        return ''.join(chunks)
+
 
 s = socket.socket(socket.AF_INET,
                   socket.SOCK_RAW,
@@ -142,3 +172,8 @@ tcph = tcpobj.pack(ipobj.source,
 packet = iph + tcph + data
 #pdb.set_trace()
 s.sendto(packet, (dest_host, 0))	
+
+#begin trying to read the datastruct of the packetTable
+# s_packetTable = myreceive()
+# packetTable = pickle.loads(s_packetTable)
+#now run the graphical operations on the data
