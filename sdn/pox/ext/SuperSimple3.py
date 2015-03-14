@@ -79,6 +79,7 @@ class SuperSimple (object):
 	"""
 
 	packet = event.parsed # This is the parsed packet data.
+	tcp_packet = None # Declare variable
 	if not packet.parsed:
 	  log.warning("Ignoring incomplete packet")
 	  return
