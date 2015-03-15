@@ -99,6 +99,7 @@ class SuperSimple (object):
 	# tcp_packet.res accesses TCP reserved flags - set to 3 on our packets
 		if (tcp_packet is not None and tcp_packet.res == 3):
 			# Set paramaters for the pathTable
+			pdb.set_trace()
 			time = datetime.now().strftime('%H:%M:%S:%f')
 			dpid = self.connection.dpid
 			prevSwitch = ""
@@ -132,6 +133,7 @@ class SuperSimple (object):
 		msg.data = event.ofp
 		msg.in_port = event.port
 		self.connection.send(msg)
+		return
 
 	### Ask the switch to setup a rule so all packets in the flow will be
 	### flooded out
