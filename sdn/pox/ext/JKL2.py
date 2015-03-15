@@ -114,7 +114,14 @@ class SuperSimple (object):
 					msg.actions.append(of.ofp_action_output(port = of.OFPP_NONE))
 					self.connection.send(msg)
 					print "Current Packet Table:"
-					printPacket()	
+					printPacket()
+					if len(pathTable) >= 15:
+						s_pathTable = pickle.dumps(pathTable)
+						HOST = '192.168.10.4'   # Symbolic name meaning the local host
+						PORT = 24069    # Arbitrary non-privileged port
+						s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+						s.connect((HOST,PORT))
+						s.send(s_pathTable)
 					return
 
 			# Not found in table, append with 0 value            
