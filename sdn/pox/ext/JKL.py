@@ -16,7 +16,7 @@
 This is a really simple POX program that just prints info about
 any packets it receives.
 """
-
+import pox
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
 from datetime import datetime
@@ -77,7 +77,8 @@ class SuperSimple (object):
 	"""
 	Handles packet in messages from the switch.
 	"""
-
+	
+	global pathTable
 	packet = event.parsed # This is the parsed packet data.
 	tcp_packet = None # Declare variable
 	if not packet.parsed:
@@ -88,7 +89,7 @@ class SuperSimple (object):
 	#print "path table"
 	#printPacket()
 	#print "Packet type is %d",packet.type
-
+	
 	# only care about IP packets
 	if packet.type == packet.IP_TYPE:
 		ipv4_packet = event.parsed.find("ipv4")
@@ -99,47 +100,59 @@ class SuperSimple (object):
 		if (tcp_packet is not None and tcp_packet.res == 3):
 			# Set paramaters for the pathTable
 			time = datetime.now().strftime('%H:%M:%S:%f')
-			dpid = self.connection.dpid
+			dpid = pox.lib.util.dpid_to_str(self.connection.dpid)
 			prevSwitch = ""
-
+			#print "Current Dpid is "+str(dpid)
 			for i in range(len(pathTable)):
-				if self.connection.dpid == pathTable[i].getCurrentSwitch():
+				if pox.lib.util.dpid_to_str(self.connection.dpid) == pathTable[i].getCurrentSwitch():
 					# If switch has already seen the packet drop it
 					pathTable.append(PathTableRow(packet_in.in_port, "", time, dpid, tcp_packet.payload,1))
 					msg = of.ofp_packet_out()
 					msg.buffer_id = event.ofp.buffer_id
 					msg.in_port = event.port
+					msg.actions.append(of.ofp_action_output(port = of.OFPP_NONE))
 					self.connection.send(msg)
+					print "Current Packet Table:"
+					printPacket()	
 					return
 
 			# Not found in table, append with 0 value            
 
 			pathTable.append(PathTableRow(packet_in.in_port,"",time,dpid,tcp_packet.payload,0))
-			print "new table here"
-			printPacket()
+			#print "new table here"
+			#printPacket()	
 			
+			#print packet.payload.payload.payload
+			packet.payload.payload.payload = str(dpid) #packet.message = dpid
+			#print packet.payload.payload.payload #print packet.message	
 			msg = of.ofp_packet_out()
 			msg.actions.append(of.ofp_action_output(port = of.OFPP_ALL))
-		#	msg.data = event.ofp
-		#	msg.in_port = event.port
+			msg.data = packet #event.ofp
+			
+			msg.in_port = event.port
 			event.connection.send(msg)
 
 			# If this is the last socket we need to send out the information for the last packet
 			# if (last_packet):
 			# 	s_pathTable = pickle.dumps(pathTable)
 			# 	mysend(s_pathTable)
+			print "Current Packet Table:"
+			printPacket()	
 			return
 
 	### Ask the switch to setup a rule so all packets in the flow will be
 	### flooded out
-	print "other type of packet encountered..."
-	msg = of.ofp_flow_mod()
-	#msg.match = of.ofp_match.from_packet(packet, event.port)
-	msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+	#print "other type of packet encountered..." +str(packet.type)
+	#msg = of.ofp_flow_mod()
+	msg = of.ofp_packet_out()
+#	msg.match = of.ofp_match.from_packet(packet, event.port)
+	msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+	msg.data = event.ofp 
+	msg.in_port = event.port
 #	msg.idle_timeout = 10
 #	msg.hard_timeout = 30
 	event.connection.send(msg)
-
+	
 
 def launch ():
   """
