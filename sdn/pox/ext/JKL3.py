@@ -23,7 +23,7 @@ from datetime import datetime
 import pickle
 import pdb
 import socket
-
+from graph_tool.all import *
 
 log = core.getLogger()
 
@@ -107,7 +107,7 @@ def create_graph(path_table):
 	# vprop_obj[receiver] = Node("Reciever", 'fdsklaj')
 
 	graph_draw(g, vertex_text=vprop_label, vertex_font_size=18,
-							output_size=(1000, 1000), vertex_fill_color=vprop_color, edge_text=eprop_label, edge_font_size=40, edge_text_distance=20, edge_marker_size=40, output="graph.png")
+							output_size=(1000, 1000), vertex_fill_color=vprop_color, edge_marker_size=40, output="graph.png")
 
 
 
