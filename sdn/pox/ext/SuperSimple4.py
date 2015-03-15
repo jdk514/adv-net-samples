@@ -19,6 +19,7 @@ any packets it receives.
 
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
+from pox.lib.revent import EventRemove
 from datetime import datetime
 import pdb
 
@@ -79,7 +80,7 @@ class SuperSimple (object):
 	"""
 
 	packet = event.parsed # This is the parsed packet data.
-	tcp_packet = None # Declare variable
+	tcp_packet = None # Declare Variable
 	if not packet.parsed:
 	  log.warning("Ignoring incomplete packet")
 	  return
@@ -126,6 +127,12 @@ class SuperSimple (object):
 			# 	mysend(s_pathTable)
 			return
 
+		msg = of.ofp_packet_out()
+		msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+		msg.data = event.ofp
+		msg.in_port = event.port
+		self.connection.send(msg)
+
 	### Ask the switch to setup a rule so all packets in the flow will be
 	### flooded out
 	msg = of.ofp_flow_mod()
@@ -137,11 +144,21 @@ class SuperSimple (object):
 
 
 def launch ():
-  """
-  Starts the component. Run when Pox starts.
-  """
-  def start_switch (event):
-	log.debug("Controlling %s" % (event.connection,))
-	SuperSimple(event.connection)
+	"""
+	Starts the component. Run when Pox starts.
+	"""
+	def start_switch (event):
+		log.debug("Controlling %s" % (event.connection,))
+		SuperSimple(event.connection)
 
-  core.openflow.addListenerByName("ConnectionUp", start_switch)
+	def set_miss_length (event = None):
+		if not core.hasComponent('openflow'):
+			return
+		core.openflow.miss_send_len = 0x7fff
+		core.getLogger().info("Requesting full packet payloads")
+		return EventRemove
+
+	if set_miss_length() is None:
+		core.addListenerByName("ComponentRegistered", set_miss_length)
+
+	core.openflow.addListenerByName("ConnectionUp", start_switch)
