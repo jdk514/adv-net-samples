@@ -205,6 +205,8 @@ int main(int argc, char ** argv)
                 perror("ERROR on send");
                 exit(-1);
             }
+            
+            //free(req->request);
             http_response_free(response);
             
             /* File does not exist, return 404 */
@@ -234,7 +236,8 @@ int main(int argc, char ** argv)
         printf("Reached request free.\n");
         free(req->method);
         printf("Freed method\n");
-        //free(req->request);
+        req->request--;
+        free(req->request);
         printf("Freed request\n");
         free(req->version);
         printf("Freed version\n");
