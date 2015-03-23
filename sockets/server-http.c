@@ -43,24 +43,17 @@ http_response *http_response_alloc()
     strcpy(response->host,"host.name");
     response->content_type = (char*)malloc(sizeof(char)*3);
     strcpy(response->content_type, " ");
-    printf("response object created\n");
     return response;
 }
 
 void http_response_free(http_response * response)
 {
     free(response->version);
-    printf("freed version\n");
     free(response->response_code);
-    printf("freed response_code\n");
     free(response->host);
-    printf("freed host\n");
     free(response->content_type);
-    printf("freed content_type\n");
     free(response->body);
-    printf("freed body\n");
     free(response);
-    printf("freed response!\n");
 }
 
 //char* response_creation()
@@ -226,21 +219,15 @@ int main(int argc, char ** argv)
                 perror("ERROR on send");
                 exit(-1);
             }
-            printf("Reached response in else\n");
             http_response_free(response);
-            printf("Finished free of response\n");
 
         }
         
         close(clientfd);
-        printf("Reached request free.\n");
         free(req->method);
-        printf("Freed method\n");
         req->request--;
         free(req->request);
-        printf("Freed request\n");
         free(req->version);
-        printf("Freed version\n");
         free (req);
     }
     
